@@ -15,9 +15,23 @@ The goals / steps of this project are the following:
 * Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
+**Status of the Project
+
+It took me hours, weeks, months to finish the project as I was missing the problematic point of my solution.
+The solution I had was:
+* I started with the exact NVidia model (https://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf) only including some dropout layers to it. 
+* tried with various augmentation techniques
+* tried with different parameters (learning rate, kernel sizes, ...)
+* tried with different data sets (including/excluding normal driving behaviour, redirecting the the middle of the road, ...)
+* tried with different training techniques (generators, full data, ...)
+
+it simply did not work.
+
+Then I hit on the forum mentionings of 'models being too complex'. As I was expecting the NVidia model to be 'the' model working perfectly well, I didn't initially realized it might the the model causing all the problems. Changing the model to an easier version immediatelly showed greatly improved loss and training behaviour.
 
 [//]: # (Image References)
 
+[final_model]: ./report_images/final_model_keras.png
 [image1]: ./examples/placeholder.png "Model Visualization"
 [image2]: ./examples/placeholder.png "Grayscaling"
 [image3]: ./examples/placeholder_small.png "Recovery Image"
@@ -27,70 +41,111 @@ The goals / steps of this project are the following:
 [image7]: ./examples/placeholder_small.png "Flipped Image"
 
 ## Rubric Points
-###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
+### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
 
 ---
-###Files Submitted & Code Quality
+### Files Submitted & Code Quality
 
-####1. Submission includes all required files and can be used to run the simulator in autonomous mode
+#### 1. Submission includes all required files and can be used to run the simulator in autonomous mode
 
 My project includes the following files:
-* model.py containing the script to create and train the model
+* model.ipynb containing the script to create and train the model
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
 * writeup_report.md or writeup_report.pdf summarizing the results
 
-####2. Submission includes functional code
+#### 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
 ```sh
 python drive.py model.h5
 ```
 
-####3. Submission code is usable and readable
+#### 3. Submission code is usable and readable
 
-The model.py file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
+The model.ipynb file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
 
-###Model Architecture and Training Strategy
+### Model Architecture and Training Strategy
 
-####1. An appropriate model architecture has been employed
+#### 1. An appropriate model architecture has been employed
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
+My model consists of the following layers:
+![alt text][final_model]
 
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+Important nodes about this model:
+* I've used 'elu' activations instead of 'relu' as they seem to perform a little better according to http://www.picalike.com/blog/2015/11/28/relu-was-yesterday-tomorrow-comes-elu/
+* I've used average pooling as manual tests showed they performed better thay the max pooling algorithm
+* I've used a pooling size of 7x7
+* one convolutional layer is included with a depth of 64 and size of 7x7
+* There's one fully connected layer of 20 nodes
+* an output layer of 1 node representing the steering angle
+* Dropout rate of 0.6 is included in the dense layers
 
-####2. Attempts to reduce overfitting in the model
+#### 2. Attempts to reduce overfitting in the model
 
 The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
 
 The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
-####3. Model parameter tuning
+#### 3. Model parameter tuning
 
 The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 25).
 
-####4. Appropriate training data
+#### 4. Appropriate training data
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
+For the training data I initially used 3 driving laps in the correct direction, 3 driving laps in the opposite direction and about 1/2 track for recovery driving.
+As I had problems getting an initial version to work, I went back to the data provided by Udacity. As this data was enough to succeed the project, I didn't use any other data anymore.
 
-For details about how I created the training data, see the next section. 
+### Model Architecture and Training Strategy
 
-###Model Architecture and Training Strategy
+#### 1. Solution Design Approach
 
-####1. Solution Design Approach
+When I realized the full NVidia model wouldn't solve the problem, I started simplying the model randomly by removing some convolutional layers, some dense layers, decrease the size of the dense layers, add dropout, change the depth of the convolutional layers, etc. Quite quickly I ended up with a model which did the trick of driving the car around the track.
 
-The overall strategy for deriving a model architecture was to ...
+But then the question is: can't we do better? Can't we find a simpler model (easier/faster to train) to perform the job.
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+So I've written some helper methods as you can see in cell X in the jupyter notebook:
+##### create_parameterized_model_final
+will create the following model:
+* a normalization layer 
+* a cropping layer removing the top and bottom parts of the image 
+* convolutional layers as specified by a paramter. parameters to tweak per convolutional layer are the depth, size, activation function, and pooling size 
+* fully connected layers as specified by a parameter. parameters to tweak per fully connected layer are the number of nodes, activation function and dropout rate.
+* a finaly layer representing the output layer with a single node
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
+##### find_optimal_model
+As the NVidia model was chosen as a reference model, I still wanted to fit the idea: some convolutional layers followed by some fully connected layers. This method will generate all possible combinations for specific parameters I would like to tune. Those parameters are:
+* conv_kernel_sizes = [8,16,32,64]
+* conv_filter_sizes = [2,3,5,7]
+* activation_functions = ['elu']
+* pooling_functions = ['avg']
+* pooling_sizes = [2,3,5,7]
+* dense_units = [1000,100,50,20, 0]
+* dropout_rates = [0.6]
 
-To combat the overfitting, I modified the model so that ...
+this method will iterate over all possible combinations of those parameters, for convolutional layers 1 to 4 and fully connected layers 1 to 3, using the create_parameterized_model_final method to create the real model.
 
-Then I ... 
+As it's perfectly working, it does not seem to be feasible to find the optimal model, as it would take quite a long time.
 
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
+So I changed my strategy: wouldn't it be possible to find a model with a single convolutional layer and a single dense layer to solve the problem.
 
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+Therefore, I've writting the following function:
+##### find_optimal_model_oneConv_oneDense
+this will iterate through all possible cobminations of a single convolutional layer and a single dense layer to find the optimal solution.
+
+Now that I can generate 'random' models, the question is how to decide which model performs better than others. The solution is to create a generator to generate models according to the parameters requested, train this model, and see which trains best according to the loss parameters.
+
+For this 'first level training' I used the following parameters:
+* batch_size=50
+* samples_per_epoch=200
+* validation_samples=100
+* training_set_length=0.85
+* epochs: 150 (but an early stopping callback with a patience of 4)
+
+And important callback functions:
+* early stopping to make sure not to coninue fitting when already overfitting
+* csv logger to log output for all epochs to files to allow for later processing
+
+Querying those files showed the chosen model as being the best (which offcourse, as seen from the low training parameters, can be questioned). But when I used the model trained to find the 'optimal' one, it already showed some interesting drigving bevaviour, as you can see [here](./report_images/trained_validation.mp4)
 
 ####2. Final Model Architecture
 

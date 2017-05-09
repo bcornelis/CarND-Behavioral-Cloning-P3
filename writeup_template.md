@@ -71,6 +71,7 @@ My model consists of the following layers:
 ![alt text][final_model]
 
 Important nodes about this model:
+* The size of the images is scaled to (100,33) as I didn't notice any visual decrease in driving performance
 * I've used 'elu' activations instead of 'relu' as they seem to perform a little better according to http://www.picalike.com/blog/2015/11/28/relu-was-yesterday-tomorrow-comes-elu/
 * I've used average pooling as manual tests showed they performed better thay the max pooling algorithm
 * I've used a pooling size of 7x7

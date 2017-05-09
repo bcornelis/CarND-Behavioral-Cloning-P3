@@ -30,8 +30,6 @@ it simply did not work.
 Then I hit on the forum mentionings of 'models being too complex'. As I was expecting the NVidia model to be 'the' model working perfectly well, I didn't initially realized it might the the model causing all the problems. Changing the model to an easier version immediatelly showed greatly improved loss and training behaviour.
 
 Unfortunately as so many time is lost, and there's still some important lessons and the final project left, I don't have the time to finish this project as I would. It's working, but there are some shortcommings.
-Including:
-* the model does not always work, but mostly it does
 
 [//]: # (Image References)
 

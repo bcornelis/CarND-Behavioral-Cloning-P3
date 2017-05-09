@@ -6,7 +6,7 @@
 
 ---
 
-** Behavioral Cloning Project**
+**Behavioral Cloning Project**
 
 The goals / steps of this project are the following:
 * Use the simulator to collect data of good driving behavior
@@ -15,7 +15,7 @@ The goals / steps of this project are the following:
 * Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
-** Status of the Project
+**Status of the Project**
 
 It took me hours, weeks, months to finish the project as I was missing the problematic point of my solution.
 The solution I had was:
@@ -28,6 +28,8 @@ The solution I had was:
 it simply did not work.
 
 Then I hit on the forum mentionings of 'models being too complex'. As I was expecting the NVidia model to be 'the' model working perfectly well, I didn't initially realized it might the the model causing all the problems. Changing the model to an easier version immediatelly showed greatly improved loss and training behaviour.
+
+Unfortunately as so many time is lost, and there's still some important lessons and the final project left, I don't have the time to finish this project as I would. It's working, but there are some shortcommings.
 
 [//]: # (Image References)
 
@@ -79,7 +81,7 @@ Important nodes about this model:
 
 #### 2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting (model.ipynb lines 21). 
+The model contains dropout layers in order to reduce overfitting. 
 
 The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
@@ -100,7 +102,7 @@ When I realized the full NVidia model wouldn't solve the problem, I started simp
 
 But then the question is: can't we do better? Can't we find a simpler model (easier/faster to train) to perform the job.
 
-So I've written some helper methods as you can see in cell X in the jupyter notebook:
+So I've written some helper methods as you can see in cell 05 in the jupyter notebook:
 ##### create_parameterized_model_final
 will create the following model:
 * a normalization layer 
@@ -119,9 +121,9 @@ As the NVidia model was chosen as a reference model, I still wanted to fit the i
 * dense_units = [1000,100,50,20, 0]
 * dropout_rates = [0.6]
 
-this method will iterate over all possible combinations of those parameters, for convolutional layers 1 to 4 and fully connected layers 1 to 3, using the create_parameterized_model_final method to create the real model.
+this method will iterate over all possible combinations of those parameters, for convolutional layers 1 to 4 and fully connected layers 1 to 4, using the create_parameterized_model_final method to create the real model.
 
-As it's perfectly working, it does not seem to be feasible to find the optimal model, as it would take quite a long time.
+Even it's perfectly working, it does not seem to be feasible to find the optimal model, as it would take quite a long time.
 
 So I changed my strategy: wouldn't it be possible to find a model with a single convolutional layer and a single dense layer to solve the problem.
 
@@ -129,7 +131,7 @@ Therefore, I've writting the following function:
 ##### find_optimal_model_oneConv_oneDense
 this will iterate through all possible cobminations of a single convolutional layer and a single dense layer to find the optimal solution.
 
-Now that I can generate 'random' models, the question is how to decide which model performs better than others. The solution is to create a generator to generate models according to the parameters requested, train this model, and see which trains best according to the loss parameters.
+Now that I can generate 'random' models, the question is how to decide which model performs better than others. The solution is to create a generator to generate models according to the parameters requested, train this model with a very small batch size, and see which trains best according to the loss parameters.
 
 For this 'first level training' I used the following parameters:
 * batch_size=50
@@ -144,15 +146,12 @@ And important callback functions:
 
 Querying those files showed the chosen model as being the best (which offcourse, as seen from the low training parameters, can be questioned). But when I used the model trained to find the 'optimal' one, it already showed some interesting drigving bevaviour, as you can see [here](./report_images/trained_validation.mp4). The model is included [here](./report_images/trained_validation.hdf5)
 
-####2. Final Model Architecture
+Training this model with more samples (and only left/right, and flipping as augmentation techniques) I ended up by driving the car around the track. The result can be seen [here](./report_images/final.mp4) and the model is included [here](./report_images/final.hdf5)
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
-
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
-
-![alt text][image1]
+As information: I know that this method of finding the 'optimal' model is definitely not computationally correct in any way, but it allowed me not only to manually tweak some random properties of the NVidia model, but play around with different models etc.
 
 #### 3. Creation of the Training Set & Training Process
+Augmentation techniques can be found in cell 02.
 
 ##### Augmentation
 I've implemented the followign augmentation algorithms.
@@ -179,7 +178,7 @@ The result is that the image is shifted left/right or top/bottom.
 All credits of this implementation go to: Vivek Yadav (https://chatbotslife.com/using-augmentation-to-mimic-human-driving-496b569760a9)
 
 ##### Generator
-I used a generator to provide the training data. The logic of the generator is:
+I used a generator to provide the training data (cell 06). The logic of the generator is:
 1. get a random line in the training csv data
 2. get a random image from this line (center, left or right)
 3. only process straight images in 10% of the cases
@@ -190,7 +189,7 @@ I used a generator to provide the training data. The logic of the generator is:
 8. apply translation/shifting augmentation in 80% of the cases
 
 ##### Validator
-For validation, a generator is used generating tuples according to the following steps:
+For validation, a generator is used generating tuples according to the following steps (cell 06):
 1. get a random line in the training csv data
 2. get the center image from this line
 3. scale the image to fit the expected input_size of the model
@@ -200,30 +199,18 @@ While playing around, I've implemented the following augmentation algorithms:
 
 ##### Training and validation set
 I've used 2 training configurations:
-one to find the 'omptimal' model
+one to find the 'optimal' model, and one to train this model. In both situations I used the same training data generator and validation data generator, but the following parameters were different:
+finding the best model:
+* batch_size=50
+* samples_per_epoch=200
+* validation_samples=100
+* training_set_length=0.85
+and for training this model:
+* batch_size=400
+* samples_per_epoch=40000
+* validation_samples=8000
+* training_set_length=0.85
 
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
+All csv lines were shuffled before training, split into training and validation set and the generators randomly pick elements form the apropriate list.
 
-![alt text][image2]
-
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
-
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
-
-Then I repeated this process on track two in order to get more data points.
-
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
-
-![alt text][image6]
-![alt text][image7]
-
-Etc ....
-
-After the collection process, I had X number of data points. I then preprocessed this data by ...
-
-
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
-
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+for the optimal model I did not use brightness augmentation and translation augmentation. I compared the final model generation with using those techniques and without, but there was no big visual improvement.

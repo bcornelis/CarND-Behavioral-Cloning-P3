@@ -216,3 +216,6 @@ and for training this model:
 All csv lines were shuffled before training, split into training and validation set and the generators randomly pick elements form the apropriate list.
 
 for the optimal model I did not use brightness augmentation and translation augmentation. I compared the final model generation with using those techniques and without, but there was no big visual improvement.
+
+## Final Movie
+The final movie can be seen [here](./report_images/final.mp4)

@@ -205,6 +205,7 @@ finding the best model:
 * samples_per_epoch=200
 * validation_samples=100
 * training_set_length=0.85
+
 and for training this model:
 * batch_size=400
 * samples_per_epoch=40000

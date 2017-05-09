@@ -6,7 +6,7 @@
 
 ---
 
-**Behavioral Cloning Project**
+** Behavioral Cloning Project**
 
 The goals / steps of this project are the following:
 * Use the simulator to collect data of good driving behavior
@@ -15,7 +15,7 @@ The goals / steps of this project are the following:
 * Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
-**Status of the Project
+** Status of the Project
 
 It took me hours, weeks, months to finish the project as I was missing the problematic point of my solution.
 The solution I had was:

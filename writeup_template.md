@@ -32,13 +32,10 @@ Then I hit on the forum mentionings of 'models being too complex'. As I was expe
 [//]: # (Image References)
 
 [final_model]: ./report_images/final_model_keras.png
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
+[augmentation_left-right]: ./report_images/augmentation_left-right.png
+[augmentation_flipping]: ./report_images/augmentation_flipping.png
+[augmentation_brightness]: ./report_images/augmentation_brightness.png
+[augmentation_translation]: ./report_images/augmentation_translation.png
 
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -82,9 +79,9 @@ Important nodes about this model:
 
 #### 2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
+The model contains dropout layers in order to reduce overfitting (model.ipynb lines 21). 
 
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
 #### 3. Model parameter tuning
 
@@ -145,7 +142,7 @@ And important callback functions:
 * early stopping to make sure not to coninue fitting when already overfitting
 * csv logger to log output for all epochs to files to allow for later processing
 
-Querying those files showed the chosen model as being the best (which offcourse, as seen from the low training parameters, can be questioned). But when I used the model trained to find the 'optimal' one, it already showed some interesting drigving bevaviour, as you can see [here](./report_images/trained_validation.mp4)
+Querying those files showed the chosen model as being the best (which offcourse, as seen from the low training parameters, can be questioned). But when I used the model trained to find the 'optimal' one, it already showed some interesting drigving bevaviour, as you can see [here](./report_images/trained_validation.mp4). The model is included [here](./report_images/trained_validation.hdf5)
 
 ####2. Final Model Architecture
 
@@ -155,7 +152,55 @@ Here is a visualization of the architecture (note: visualizing the architecture 
 
 ![alt text][image1]
 
-####3. Creation of the Training Set & Training Process
+#### 3. Creation of the Training Set & Training Process
+
+##### Augmentation
+I've implemented the followign augmentation algorithms.
+![][augmentation_left-right]
+
+###### Left/Right camera images
+Also use the left and right camera images. A correction factor of 0.25 is applied to correct the steering angle for the side images.
+![][augmentation_left-right]
+
+###### Image Flipping
+I there's an image with a steering angle to the left, we can flip the angle and we have an extra training sample with an image steering to the right.
+![][augmentation_flipping]
+
+###### Brightness Augmentation
+The result of applying this transformation is the same image with a different brightness factor applied.
+![][augmentation_brightness]
+
+All credits of this implementation go to: Vivek Yadav (https://chatbotslife.com/using-augmentation-to-mimic-human-driving-496b569760a9)
+
+###### Translation Augmentation
+The result is that the image is shifted left/right or top/bottom.
+![][augmentation_translation]
+
+All credits of this implementation go to: Vivek Yadav (https://chatbotslife.com/using-augmentation-to-mimic-human-driving-496b569760a9)
+
+##### Generator
+I used a generator to provide the training data. The logic of the generator is:
+1. get a random line in the training csv data
+2. get a random image from this line (center, left or right)
+3. only process straight images in 10% of the cases
+4. scale the image to fit the expected input size of the model. I scale to (33+95,100) for which the 95 is the part being cropped off in the mode itself
+5. adjust the steering if left or right image
+6. flip the image in 50% of the cases, and if it's not a straight one
+7. apply brightness augmentation in 90% of the cases
+8. apply translation/shifting augmentation in 80% of the cases
+
+##### Validator
+For validation, a generator is used generating tuples according to the following steps:
+1. get a random line in the training csv data
+2. get the center image from this line
+3. scale the image to fit the expected input_size of the model
+
+###### Augmentation
+While playing around, I've implemented the following augmentation algorithms:
+
+##### Training and validation set
+I've used 2 training configurations:
+one to find the 'omptimal' model
 
 To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
 
